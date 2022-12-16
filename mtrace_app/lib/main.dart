@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mtrace_app/Models/Expenses.dart';
+import 'package:mtrace_app/Models/OfflineExpenses.dart';
 import 'package:mtrace_app/Models/User.dart';
 import 'package:mtrace_app/Screens/AuthScreen.dart';
 import 'package:mtrace_app/Screens/CategoryScreen.dart';
@@ -8,7 +10,11 @@ import 'package:mtrace_app/Screens/ProfileScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
+  await Hive.initFlutter();
+
+  await Hive.openBox("mtraceExpenseBox");
+
   runApp(const MyApp());
 }
 
@@ -31,6 +37,7 @@ class _MyAppState extends State<MyApp> {
       providers: [
         ChangeNotifierProvider.value(value: User()),
         ChangeNotifierProvider.value(value: Expenses()),
+        ChangeNotifierProvider.value(value: OfflineExpenses()),
       ],
       child: MaterialApp(
         title: 'Flutter Demo',

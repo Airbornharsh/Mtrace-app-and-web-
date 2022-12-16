@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mtrace_app/Models/Expenses.dart';
+import 'package:mtrace_app/Models/OfflineExpenses.dart';
 import 'package:mtrace_app/Models/User.dart';
 import 'package:mtrace_app/Utils/Datas/CategoryRenderData.dart';
+import 'package:mtrace_app/Utils/Structure.dart';
+import 'package:mtrace_app/Utils/functions/monthToString.dart';
 import 'package:provider/provider.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -38,20 +41,28 @@ class _CategoryScreenState extends State<CategoryScreen> {
     var Category = CategoryRenderData.getCategory(categoryId as String);
 
     setState(() {
-      items = Provider.of<Expenses>(context, listen: false)
-          .categoryItems(categoryId);
+      if (user.getOffline) {
+        items = Provider.of<OfflineExpenses>(context, listen: false)
+            .categoryItems(categoryId);
+      } else {
+        items = Provider.of<Expenses>(context, listen: false)
+            .categoryItems(categoryId);
+      }
     });
 
     return Scaffold(
       appBar: AppBar(
+        leading: const BackButton(
+          color: Color.fromARGB(255, 91, 111, 133), // <-- SEE HERE
+        ),
         title: Text(
           Category.name,
-          style: const TextStyle(color: Colors.black),
+          style: const TextStyle(color: Color.fromARGB(255, 91, 111, 133)),
         ),
         iconTheme: const IconThemeData(color: Colors.black, size: 35),
         backgroundColor: const Color.fromRGBO(203, 213, 225, 1),
         actions: [
-          if (user.getAuth)
+          if (user.getAuth || user.getOffline)
             IconButton(
                 onPressed: () {
                   showDialog(
@@ -80,7 +91,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                   Icons.edit,
                   size: 24,
                 )),
-          if (user.getAuth)
+          if (user.getAuth || user.getOffline)
             IconButton(
                 onPressed: () {
                   showDialog(
@@ -106,7 +117,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 },
                 color: const Color.fromARGB(255, 91, 111, 133),
                 icon: const Icon(Icons.delete, size: 24)),
-          if (user.getAuth && !isAdding)
+          if ((user.getAuth || user.getOffline) && !isAdding)
             IconButton(
                 onPressed: () {
                   setState(() {
@@ -115,7 +126,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 },
                 color: const Color.fromARGB(255, 91, 111, 133),
                 icon: const Icon(Icons.add, size: 28)),
-          if (user.getAuth && isAdding)
+          if ((user.getAuth || user.getOffline) && isAdding)
             IconButton(
                 onPressed: () {
                   setState(() {
@@ -124,7 +135,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 },
                 color: const Color.fromARGB(255, 91, 111, 133),
                 icon: const Icon(Icons.dangerous)),
-          if (user.getAuth)
+          if (user.getAuth || user.getOffline)
             const SizedBox(
               width: 9,
             ),
@@ -200,25 +211,57 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: IconButton(
                                 color: Colors.white,
                                 onPressed: () {
-                                  Provider.of<Expenses>(context, listen: false)
-                                      .addExpense(
-                                          categoryId,
-                                          _titleController.text,
-                                          double.parse(_amountController.text))
-                                      .then((El) {
-                                    print(El);
-                                    if (El) {
-                                      const snackBar = SnackBar(
-                                          content: Text("Expense Added"));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    } else {
-                                      const snackBar = SnackBar(
-                                          content: Text("Expense Not Added"));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    }
-                                  });
+                                  if (user.getOffline) {
+                                    Provider.of<OfflineExpenses>(context,
+                                            listen: false)
+                                        .addExpenseOffline(
+                                            categoryId,
+                                            _titleController.text,
+                                            double.parse(
+                                                _amountController.text))
+                                        .then((El) {
+                                      setState(() {
+                                        items = Provider.of<OfflineExpenses>(
+                                                context,
+                                                listen: false)
+                                            .categoryItems(categoryId);
+                                      });
+
+                                      if (El) {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Added"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      } else {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Not Added"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      }
+                                    });
+                                  } else {
+                                    Provider.of<Expenses>(context,
+                                            listen: false)
+                                        .addExpense(
+                                            categoryId,
+                                            _titleController.text,
+                                            double.parse(
+                                                _amountController.text))
+                                        .then((El) {
+                                      print(El);
+                                      if (El) {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Added"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      } else {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Not Added"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      }
+                                    });
+                                  }
                                 },
                                 icon: const Icon(
                                   Icons.add,
@@ -294,29 +337,61 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             child: IconButton(
                                 color: Colors.white,
                                 onPressed: () {
-                                  Provider.of<Expenses>(context, listen: false)
-                                      .editExpense(
-                                          categoryId,
-                                          _idController.text,
-                                          _titleController.text,
-                                          double.parse(_amountController.text))
-                                      .then((El) {
-                                    if (El) {
-                                      const snackBar = SnackBar(
-                                          content: Text("Expense Edited"));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                      setState(() {
-                                        _titleController.clear();
-                                        _amountController.clear();
-                                      });
-                                    } else {
-                                      const snackBar = SnackBar(
-                                          content: Text("Expense Not Edited"));
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(snackBar);
-                                    }
-                                  });
+                                  if (user.getOffline) {
+                                    Provider.of<OfflineExpenses>(context,
+                                            listen: false)
+                                        .editExpenseOffline(
+                                            categoryId,
+                                            _idController.text,
+                                            _titleController.text,
+                                            double.parse(
+                                                _amountController.text))
+                                        .then((El) {
+                                      if (El) {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Edited"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                        setState(() {
+                                          _titleController.clear();
+                                          _amountController.clear();
+                                        });
+                                      } else {
+                                        const snackBar = SnackBar(
+                                            content:
+                                                Text("Expense Not Edited"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      }
+                                    });
+                                  } else {
+                                    Provider.of<Expenses>(context,
+                                            listen: false)
+                                        .editExpense(
+                                            categoryId,
+                                            _idController.text,
+                                            _titleController.text,
+                                            double.parse(
+                                                _amountController.text))
+                                        .then((El) {
+                                      if (El) {
+                                        const snackBar = SnackBar(
+                                            content: Text("Expense Edited"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                        setState(() {
+                                          _titleController.clear();
+                                          _amountController.clear();
+                                        });
+                                      } else {
+                                        const snackBar = SnackBar(
+                                            content:
+                                                Text("Expense Not Edited"));
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(snackBar);
+                                      }
+                                    });
+                                  }
                                 },
                                 icon: const Icon(
                                   Icons.add,
@@ -425,7 +500,6 @@ class _CategoryScreenState extends State<CategoryScreen> {
                       ),
                     ),
                   ),
-                  
                 ],
               ),
             ),
@@ -448,30 +522,59 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                                 const Color.fromARGB(
                                                     255, 91, 111, 133))),
                                     onPressed: (() {
-                                      Provider.of<Expenses>(context,
-                                              listen: false)
-                                          .deleteExpense(
-                                              categoryId, items[i].id)
-                                          .then((El) {
-                                        Navigator.of(context).pop();
-                                        if (El) {
-                                          const snackBar = SnackBar(
-                                              content: Text("Expense Deleted"));
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(snackBar);
-                                          setState(() {
-                                            _titleController.clear();
-                                            _amountController.clear();
-                                          });
-                                        } else {
-                                          const snackBar = SnackBar(
-                                              content:
-                                                  Text("Expense Not Deleted"));
+                                      if (user.getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .deleteExpenseOffline(
+                                                categoryId, items[i].id)
+                                            .then((El) {
+                                          Navigator.of(context).pop();
+                                          if (El) {
+                                            const snackBar = SnackBar(
+                                                content:
+                                                    Text("Expense Deleted"));
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                            setState(() {
+                                              _titleController.clear();
+                                              _amountController.clear();
+                                            });
+                                          } else {
+                                            const snackBar = SnackBar(
+                                                content: Text(
+                                                    "Expense Not Deleted"));
 
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(snackBar);
-                                        }
-                                      });
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                          }
+                                        });
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .deleteExpense(
+                                                categoryId, items[i].id)
+                                            .then((El) {
+                                          Navigator.of(context).pop();
+                                          if (El) {
+                                            const snackBar = SnackBar(
+                                                content:
+                                                    Text("Expense Deleted"));
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                            setState(() {
+                                              _titleController.clear();
+                                              _amountController.clear();
+                                            });
+                                          } else {
+                                            const snackBar = SnackBar(
+                                                content: Text(
+                                                    "Expense Not Deleted"));
+
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                          }
+                                        });
+                                      }
                                     }),
                                     child: const Text(
                                       "Yes",
@@ -520,8 +623,7 @@ class _CategoryScreenState extends State<CategoryScreen> {
                             const SizedBox(
                               width: 2,
                             ),
-                            Text(Provider.of<Expenses>(context, listen: false)
-                                .monthToString(items[i].time.month)),
+                            Text(monthToString(items[i].time.month)),
                             Text(", ${items[i].time.year.toString()}"),
                           ],
                         ),

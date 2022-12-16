@@ -20,7 +20,7 @@ class UserData {
 class User with ChangeNotifier {
   late UserData _user;
   bool _isAuth = false;
-  bool _isOffline = true;
+  bool _isOffline = false;
   late String _token;
 
   UserData get getUserData {

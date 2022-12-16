@@ -1,51 +1,28 @@
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
-import 'package:http/http.dart';
+import 'package:hive_flutter/adapters.dart';
 import 'package:mtrace_app/Utils/Structure.dart';
 import 'package:mtrace_app/Utils/functions/ExpenseConvert.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
-class Expenses with ChangeNotifier {
+class OfflineExpenses with ChangeNotifier {
   List<Expense> _items = [];
   Map<String, Map<String, Object>> _categoryItems = {};
   Filter filter = Filter.newestFirst;
+  final Box _box = Hive.box("mtraceExpenseBox");
 
-  Filter get getFilter {
-    return filter;
-  }
-
-  Future<List<Expense>> onLoad() async {
-    var client = Client();
-    final prefs = await SharedPreferences.getInstance();
-    String domainUri = prefs.get("mtrace_backend_uri") as String;
-
-    try {
-      var Res =
-          await client.get(Uri.parse("$domainUri/api/expenses/get"), headers: {
-        "Content-Type": "application/json",
-        "authorization": "bearer ${prefs.getString('mtrace_accessToken')}"
+  void onLoad() {
+    _items = [];
+    var expenseItems = _box.get("expenseItems");
+    if (expenseItems != null) {
+      expenseItems.forEach((expenseId) {
+        var expenseData = _box.get(expenseId);
+        if (expenseData != null) {
+          Expense expense = offlineExpenseConvert(expenseData);
+          _items.add(expense);
+        }
       });
-
-      if (Res.statusCode != 200) {
-        throw Res.body;
-      }
-
-      var parsedBody = json.decode(Res.body);
-
-      _items.clear();
-      parsedBody.forEach((expense) {
-        _items.add(expenseConvert(expense));
-      });
-
-      return _items;
-    } catch (e) {
-      print(e);
-      return [];
-    } finally {
-      client.close();
-      notifyListeners();
     }
+
+    // _box.delete("expenseItems");
   }
 
   void arrangeItems() {
@@ -61,7 +38,6 @@ class Expenses with ChangeNotifier {
         };
       }
     }
-    notifyListeners();
   }
 
   List<Expense> categoryItems(String category) {
@@ -134,99 +110,62 @@ class Expenses with ChangeNotifier {
     notifyListeners();
   }
 
-  Future<bool> addExpense(String category, String title, double amount) async {
-    var client = Client();
-    final prefs = await SharedPreferences.getInstance();
-    String domainUri = prefs.get("mtrace_backend_uri") as String;
-    var tempParsedBody;
+  Future<bool> addExpenseOffline(
+      String category, String title, double amount) async {
+    String dateTimeNow = DateTime.now().toIso8601String();
 
     try {
-      var Res = await client.post(Uri.parse("$domainUri/api/expense/post"),
-          body: json
-              .encode({"title": title, "amount": amount, "category": category}),
-          headers: {
-            "Content-Type": "application/json",
-            "authorization": "bearer ${prefs.getString('mtrace_accessToken')}"
-          });
+      var expenseData = {
+        "id": "${category}_$dateTimeNow",
+        "title": title,
+        "amount": amount,
+        "category": category,
+        "time": dateTimeNow
+      };
 
-      if (Res.statusCode != 200) {
-        throw Res.body;
+      if (_box.containsKey("expenseItems")) {
+        var expenseItems = _box.get("expenseItems");
+        expenseItems.add(expenseData["id"]);
+        _box.put(expenseData["id"], expenseData);
+        _box.put("expenseItems", expenseItems);
+      } else {
+        _box.put(expenseData["id"], expenseData);
+        _box.put("expenseItems", [expenseData["id"]]);
       }
 
-      var parsedBody = json.decode(Res.body);
-
-      tempParsedBody = parsedBody;
-
-      return true;
-    } catch (e) {
-      print(e);
-      return false;
-    } finally {
       late Expense expense;
 
-      expense = expenseConvert(tempParsedBody);
+      expense = offlineExpenseConvert(expenseData);
 
       _items.insert(0, expense);
 
-      (_categoryItems[tempParsedBody["category"]]?["list"] as List<Expense>)
-          .insert(0, expense);
-
-      client.close();
-      notifyListeners();
-    }
-  }
-
-  Future<bool> deleteExpense(String category, String id) async {
-    var client = Client();
-    final prefs = await SharedPreferences.getInstance();
-    String domainUri = prefs.get("mtrace_backend_uri") as String;
-
-    try {
-      var Res = await client.delete(Uri.parse("$domainUri/api/expense/delete"),
-          body: json.encode({"id": id}),
-          headers: {
-            "Content-Type": "application/json",
-            "authorization": "bearer ${prefs.getString('mtrace_accessToken')}"
-          });
-
-      if (Res.statusCode != 200) {
-        throw Res.body;
+      if (_categoryItems.containsKey(category)) {
+        (_categoryItems[category]!["list"] as List<Expense>).insert(0, expense);
+      } else {
+        _categoryItems[category] = {
+          "filter": Filter.newestFirst,
+          "list": [expense]
+        };
       }
-
-      var parsedBody = json.decode(Res.body);
-
-      (_categoryItems[category]!["list"] as List<Expense>)
-          .removeWhere((e) => e.id == id);
-
-      _items.removeWhere((e) => e.id == id);
 
       return true;
     } catch (e) {
       print(e);
       return false;
     } finally {
-      client.close();
       notifyListeners();
     }
   }
 
-  Future<bool> editExpense(
+  Future<bool> editExpenseOffline(
       String category, String id, String title, double amount) async {
-    var client = Client();
-    final prefs = await SharedPreferences.getInstance();
-    String domainUri = prefs.get("mtrace_backend_uri") as String;
-
     try {
-      var Res = await client.put(Uri.parse("$domainUri/api/expense/put"),
-          body: json.encode({"id": id, "title": title, "amount": amount}),
-          headers: {
-            "Content-Type": "application/json",
-            "authorization": "bearer ${prefs.getString('mtrace_accessToken')}"
-          });
+      var expenseData = _box.get(id);
 
-      if (Res.statusCode != 200) {
-        throw Res.body;
-      }
+      expenseData["title"] = title;
+      expenseData["amount"] = amount;
+
+      _box.put(id, expenseData);
 
       var expense = (_categoryItems[category]!["list"] as List<Expense>)
           .firstWhere((e) => e.id == id);
@@ -243,14 +182,33 @@ class Expenses with ChangeNotifier {
               emailId: expense.emailId,
               time: expense.time);
 
-      // _items.removeWhere((e) => e.id == id);
-
       return true;
     } catch (e) {
       print(e);
       return false;
     } finally {
-      client.close();
+      notifyListeners();
+    }
+  }
+
+  Future<bool> deleteExpenseOffline(String category, String id) async {
+    try {
+      
+      _box.delete(id);
+
+      var expenseItemsId = _box.get("expenseItems");
+      expenseItemsId.removeWhere((e) => e == id);
+      _box.put("expenseItems", expenseItemsId);
+
+      (_categoryItems[category]!["list"] as List<Expense>)
+          .removeWhere((e) => e.id == id);
+
+      _items.removeWhere((e) => e.id == id);
+
+      return true;
+    } catch (e) {
+      return false;
+    } finally {
       notifyListeners();
     }
   }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mtrace_app/Models/Expenses.dart';
+import 'package:mtrace_app/Models/OfflineExpenses.dart';
 import 'package:mtrace_app/Models/User.dart';
 import 'package:mtrace_app/Screens/AuthScreen.dart';
 import 'package:mtrace_app/Screens/CategoryScreen.dart';
 import 'package:mtrace_app/Utils/Datas/CategoryRenderData.dart';
+import 'package:mtrace_app/Utils/Structure.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,34 +26,53 @@ class _HomeScreenState extends State<HomeScreen> {
   String activeDropDownMenuId = "food";
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    // TODO: implement dispose
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final expenses = Provider.of<Expenses>(context, listen: false);
+    final offlineExpenses =
+        Provider.of<OfflineExpenses>(context, listen: false);
     final user = Provider.of<User>(context, listen: false);
 
     List<Expense> expenseList = [];
 
     void onStart() {
-      expenses.onLoad().then((El) {
-        expenseList = El;
+      if (user.getOffline) {
+        offlineExpenses.onLoad();
+        Provider.of<OfflineExpenses>(context, listen: false).arrangeItems();
+      } else {
+        expenses.onLoad().then((El) {
+          expenseList = El;
 
-        Provider.of<Expenses>(context, listen: false).arrangeItems();
-      });
+          Provider.of<Expenses>(context, listen: false).arrangeItems();
+        });
+      }
     }
 
-    if (widget.start1 == 1) {
-      SharedPreferences.getInstance().then((prefs) {
-        // prefs.setString("mtrace_backend_uri", "http://localhost:3000");
-        if (prefs.getKeys().contains("mtrace_offline")) {
-          setState(() {
-            user.setOffline(prefs.getBool("mtrace_offline") as bool);
-          });
-        }
-      });
+    // if (widget.start1 == 1) {
+    //   SharedPreferences.getInstance().then((prefs) {
+    //     // prefs.setString("mtrace_backend_uri", "http://localhost:3000");
+    //     // if (prefs.getKeys().contains("mtrace_offline")) {
+    //     //   setState(() {
+    //     //     user.setOffline(prefs.getBool("mtrace_offline") as bool);
+    //     //   });
+    //     // }
+    //   });
 
-      widget.start1 = 0;
-    }
+    //   widget.start1 = 0;
+    // }
 
-    if (widget.start2 == 1 && user.getAuth) {
+    if (widget.start2 == 1 && (user.getAuth || user.getOffline)) {
       onStart();
       widget.start2 = 0;
     }
@@ -88,12 +109,14 @@ class _HomeScreenState extends State<HomeScreen> {
         appBar: AppBar(
           title: const Text(
             "Mtrace",
-            style: TextStyle(color: Colors.black),
+            style: TextStyle(color: Color.fromARGB(255, 91, 111, 133)),
           ),
           iconTheme: const IconThemeData(color: Colors.black, size: 35),
           backgroundColor: const Color.fromRGBO(203, 213, 225, 1),
           actions: [
-            if (user.getAuth && !isAdding)
+            if (((user.getAuth || user.getOffline) &&
+                !isAdding &&
+                widget.checkedOffline))
               IconButton(
                   onPressed: () {
                     setState(() {
@@ -102,7 +125,9 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   color: const Color.fromARGB(255, 91, 111, 133),
                   icon: const Icon(Icons.add, size: 28)),
-            if (user.getAuth && isAdding)
+            if ((user.getAuth || user.getOffline) &&
+                isAdding &&
+                widget.checkedOffline)
               IconButton(
                   onPressed: () {
                     setState(() {
@@ -111,11 +136,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   },
                   color: const Color.fromARGB(255, 91, 111, 133),
                   icon: const Icon(Icons.dangerous, size: 28)),
-            if (user.getAuth)
+            if (user.getAuth && widget.checkedOffline)
               const SizedBox(
                 width: 9,
               ),
-            if (user.getAuth)
+            if (user.getAuth && widget.checkedOffline)
               Container(
                 decoration:
                     BoxDecoration(borderRadius: BorderRadius.circular(300)),
@@ -127,7 +152,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png")),
                 ),
               ),
-            if (!user.getAuth) const Icon(Icons.login, size: 30),
+            if (!user.getAuth && widget.checkedOffline)
+              const Icon(Icons.login, size: 30),
             const SizedBox(
               width: 10,
             )
@@ -140,233 +166,249 @@ class _HomeScreenState extends State<HomeScreen> {
             return;
           },
           child: Container(
-            padding: const EdgeInsets.only(left: 8, right: 8, top: 16),
-            child: user.getAuth
-                ? Column(
-                    children: [
-                      if (isAdding)
+            margin: const EdgeInsets.only(left: 6, right: 6, top: 7),
+            child: Column(
+              children: [
+                if (isAdding && widget.checkedOffline)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    decoration: const BoxDecoration(
+                      color: Color.fromRGBO(203, 213, 225, 1),
+                    ),
+                    child: Column(
+                      children: [
                         Container(
-                          margin: const EdgeInsets.only(bottom: 20),
-                          decoration: const BoxDecoration(
-                            color: Color.fromRGBO(203, 213, 225, 1),
+                          decoration: const BoxDecoration(color: Colors.white),
+                          width: MediaQuery.of(context).size.width - 20,
+                          margin: const EdgeInsets.only(
+                              left: 8, right: 8, top: 7, bottom: 5),
+                          padding: const EdgeInsets.only(left: 10),
+                          child: DropdownButton(
+                            value: activeDropDownMenuId,
+                            items: CategoryRenderData.data.map((el) {
+                              return DropdownMenuItem(
+                                value: el.id,
+                                child: Text(el.name),
+                              );
+                            }).toList(),
+                            hint: const Text("Click to Change"),
+                            onChanged: (value) {
+                              setState(() {
+                                activeDropDownMenuId = value as String;
+                              });
+                            },
                           ),
-                          child: Column(
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(
+                              left: 8, right: 8, bottom: 8),
+                          padding: const EdgeInsets.only(top: 4),
+                          child: TextField(
+                            autofocus: true,
+                            // onTap: addUpwards,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: "Title",
+                              fillColor: Colors.white,
+                              filled: true,
+                            ),
+                            controller: _titleController,
+                          ),
+                        ),
+                        Container(
+                          margin: const EdgeInsets.only(
+                              left: 8, right: 8, top: 1, bottom: 8),
+                          child: Row(
                             children: [
                               Container(
-                                decoration:
-                                    const BoxDecoration(color: Colors.white),
-                                width: MediaQuery.of(context).size.width - 20,
-                                margin: const EdgeInsets.only(
-                                    left: 8, right: 8, top: 7, bottom: 5),
-                                padding: const EdgeInsets.only(left: 10),
-                                child: DropdownButton(
-                                  value: activeDropDownMenuId,
-                                  items: CategoryRenderData.data.map((el) {
-                                    return DropdownMenuItem(
-                                      value: el.id,
-                                      child: Text(el.name),
-                                    );
-                                  }).toList(),
-                                  hint: const Text("Click to Change"),
-                                  onChanged: (value) {
-                                    setState(() {
-                                      activeDropDownMenuId = value as String;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Container(
-                                margin: const EdgeInsets.only(
-                                    left: 8, right: 8, bottom: 8),
-                                padding: const EdgeInsets.only(top: 4),
+                                width: MediaQuery.of(context).size.width - 88,
                                 child: TextField(
                                   autofocus: true,
                                   // onTap: addUpwards,
                                   decoration: const InputDecoration(
                                     border: InputBorder.none,
-                                    hintText: "Title",
+                                    hintText: "Amount",
                                     fillColor: Colors.white,
                                     filled: true,
                                   ),
-                                  controller: _titleController,
+                                  controller: _amountController,
                                 ),
                               ),
                               Container(
-                                margin: const EdgeInsets.only(
-                                    left: 8, right: 8, top: 1, bottom: 8),
-                                child: Row(
-                                  children: [
-                                    Container(
-                                      width: MediaQuery.of(context).size.width -
-                                          88,
-                                      child: TextField(
-                                        autofocus: true,
-                                        // onTap: addUpwards,
-                                        decoration: const InputDecoration(
-                                          border: InputBorder.none,
-                                          hintText: "Amount",
-                                          fillColor: Colors.white,
-                                          filled: true,
-                                        ),
-                                        controller: _amountController,
-                                      ),
-                                    ),
-                                    Container(
-                                      margin: const EdgeInsets.only(left: 6),
-                                      color: const Color.fromARGB(
-                                          255, 91, 111, 133),
-                                      child: IconButton(
-                                          color: Colors.white,
-                                          onPressed: () {
-                                            Provider.of<Expenses>(context,
-                                                    listen: false)
-                                                .addExpense(
-                                                    activeDropDownMenuId,
-                                                    _titleController.text,
-                                                    double.parse(
-                                                        _amountController.text))
-                                                .then((El) {
-                                              print(El);
+                                margin: const EdgeInsets.only(left: 6),
+                                color: const Color.fromARGB(255, 91, 111, 133),
+                                child: IconButton(
+                                    color: Colors.white,
+                                    onPressed: () {
+                                      if (Provider.of<User>(context,
+                                              listen: false)
+                                          .getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .addExpenseOffline(
+                                                activeDropDownMenuId,
+                                                _titleController.text,
+                                                double.parse(
+                                                    _amountController.text));
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .addExpense(
+                                                activeDropDownMenuId,
+                                                _titleController.text,
+                                                double.parse(
+                                                    _amountController.text))
+                                            .then((El) {
+                                          if (El) {
+                                            const snackBar = SnackBar(
+                                                content: Text("Expense Added"));
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                            _titleController.clear();
+                                            _amountController.clear();
+                                          } else {
+                                            const snackBar = SnackBar(
+                                                content:
+                                                    Text("Expense Not Added"));
 
-                                              if (El) {
-                                                const snackBar = SnackBar(
-                                                    content:
-                                                        Text("Expense Added"));
-
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(snackBar);
-                                                _titleController.clear();
-                                                _amountController.clear();
-                                              } else {
-                                                const snackBar = SnackBar(
-                                                    content: Text(
-                                                        "Expense Not Added"));
-
-                                                ScaffoldMessenger.of(context)
-                                                    .showSnackBar(snackBar);
-                                              }
-                                            });
-                                          },
-                                          icon: const Icon(
-                                            Icons.add,
-                                          )),
-                                    )
-                                  ],
-                                ),
+                                            ScaffoldMessenger.of(context)
+                                                .showSnackBar(snackBar);
+                                          }
+                                        });
+                                      }
+                                    },
+                                    icon: const Icon(
+                                      Icons.add,
+                                    )),
                               )
                             ],
                           ),
-                        ),
-                      categoryGrid
-                    ],
-                  )
-                : !widget.checkedOffline
-                    ? Center(
-                        child: Container(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text(
-                                "Where to Store?",
-                                style: TextStyle(fontSize: 21),
-                              ),
-                              const SizedBox(
-                                height: 5,
-                              ),
-                              Row(
+                        )
+                      ],
+                    ),
+                  ),
+                Container(
+                  padding: const EdgeInsets.only(left: 8, right: 8, top: 16),
+                  child: user.getAuth
+                      ? categoryGrid
+                      : !widget.checkedOffline
+                          ? Center(
+                              child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  TextButton(
-                                      onPressed: () {
-                                        Provider.of<User>(context,
-                                                listen: false)
-                                            .setOffline(false);
-                                        setBoolPrefs("mtrace_offline", false);
-                                        setState(() {
-                                          widget.checkedOffline = true;
-                                        });
-                                      },
-                                      style: const ButtonStyle(
-                                          backgroundColor:
-                                              MaterialStatePropertyAll<Color>(
-                                                  Color.fromARGB(
-                                                      255, 124, 139, 158))),
-                                      child: const Text(
-                                        "Online",
-                                        style: TextStyle(color: Colors.white),
-                                      )),
-                                  const SizedBox(
-                                    width: 16,
+                                  const Text(
+                                    "Where to Store?",
+                                    style: TextStyle(fontSize: 21),
                                   ),
-                                  TextButton(
-                                      onPressed: () {
-                                        Provider.of<User>(context,
-                                                listen: false)
-                                            .setOffline(true);
-                                        setBoolPrefs("mtrace_offline", true);
-                                        setState(() {
-                                          widget.checkedOffline = true;
-                                        });
-                                      },
-                                      style: const ButtonStyle(
-                                          backgroundColor:
-                                              MaterialStatePropertyAll<Color>(
-                                                  Color.fromARGB(
-                                                      255, 124, 139, 158))),
-                                      child: const Text(
-                                        "Offline",
-                                        style: TextStyle(color: Colors.white),
-                                      ))
+                                  const SizedBox(
+                                    height: 5,
+                                  ),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      TextButton(
+                                          onPressed: () {
+                                            Provider.of<User>(context,
+                                                    listen: false)
+                                                .setOffline(false);
+                                            setBoolPrefs(
+                                                "mtrace_offline", false);
+                                            setState(() {
+                                              widget.checkedOffline = true;
+                                            });
+                                          },
+                                          style: const ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStatePropertyAll<
+                                                          Color>(
+                                                      Color.fromARGB(
+                                                          255, 124, 139, 158))),
+                                          child: const Text(
+                                            "Online",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          )),
+                                      const SizedBox(
+                                        width: 16,
+                                      ),
+                                      TextButton(
+                                          onPressed: () {
+                                            Provider.of<User>(context,
+                                                    listen: false)
+                                                .setOffline(true);
+                                            setBoolPrefs(
+                                                "mtrace_offline", true);
+                                            setState(() {
+                                              widget.checkedOffline = true;
+                                            });
+                                          },
+                                          style: const ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStatePropertyAll<
+                                                          Color>(
+                                                      Color.fromARGB(
+                                                          255, 124, 139, 158))),
+                                          child: const Text(
+                                            "Offline",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ))
+                                    ],
+                                  )
                                 ],
-                              )
-                            ],
-                          ),
-                        ),
-                      )
-                    : !user.getOffline
-                        ? Center(
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .pushReplacementNamed(
-                                              AuthScreen.routeName,
-                                              arguments: true);
-                                    },
-                                    style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll<Color>(
-                                                Color.fromARGB(
-                                                    255, 124, 139, 158))),
-                                    child: const Text(
-                                      "Login",
-                                      style: TextStyle(color: Colors.white),
-                                    )),
-                                const SizedBox(
-                                  width: 20,
-                                ),
-                                TextButton(
-                                    onPressed: () {
-                                      Navigator.of(context)
-                                          .pushReplacementNamed(
-                                              AuthScreen.routeName,
-                                              arguments: false);
-                                    },
-                                    style: const ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStatePropertyAll<Color>(
-                                                Color.fromARGB(
-                                                    255, 124, 139, 158))),
-                                    child: const Text(
-                                      "Register",
-                                      style: TextStyle(color: Colors.white),
-                                    )),
-                              ],
-                            ),
-                          )
-                        : categoryGrid,
+                              ),
+                            )
+                          : !user.getOffline
+                              ? Center(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pushReplacementNamed(
+                                                    AuthScreen.routeName,
+                                                    arguments: true);
+                                          },
+                                          style: const ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStatePropertyAll<
+                                                          Color>(
+                                                      Color.fromARGB(
+                                                          255, 124, 139, 158))),
+                                          child: const Text(
+                                            "Login",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          )),
+                                      const SizedBox(
+                                        width: 20,
+                                      ),
+                                      TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context)
+                                                .pushReplacementNamed(
+                                                    AuthScreen.routeName,
+                                                    arguments: false);
+                                          },
+                                          style: const ButtonStyle(
+                                              backgroundColor:
+                                                  MaterialStatePropertyAll<
+                                                          Color>(
+                                                      Color.fromARGB(
+                                                          255, 124, 139, 158))),
+                                          child: const Text(
+                                            "Register",
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          )),
+                                    ],
+                                  ),
+                                )
+                              : categoryGrid,
+                ),
+              ],
+            ),
           ),
         ));
   }
