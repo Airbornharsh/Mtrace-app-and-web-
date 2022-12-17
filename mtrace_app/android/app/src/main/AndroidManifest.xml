@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.mtrace_app">
    <application
-        android:label="mtrace_app"
+        android:label="Mtrace"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
