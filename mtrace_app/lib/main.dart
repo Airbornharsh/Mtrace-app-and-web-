@@ -40,7 +40,7 @@ class _MyAppState extends State<MyApp> {
         ChangeNotifierProvider.value(value: OfflineExpenses()),
       ],
       child: MaterialApp(
-        title: 'Flutter Demo',
+        title: 'MTrace',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSwatch().copyWith(
             primary: const Color.fromRGBO(203, 213, 225, 1),

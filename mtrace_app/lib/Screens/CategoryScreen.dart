@@ -503,135 +503,138 @@ class _CategoryScreenState extends State<CategoryScreen> {
                 ],
               ),
             ),
-            ListView.builder(
-                shrinkWrap: true,
-                itemCount: items.length,
-                itemBuilder: ((ctx, i) {
-                  // print(items[i].time.day);
-                  return GestureDetector(
-                    onDoubleTap: () {
-                      showDialog(
-                          context: context,
-                          builder: (ctx) {
-                            return AlertDialog(
-                              actions: [
-                                TextButton(
-                                    style: ButtonStyle(
-                                        backgroundColor:
-                                            MaterialStateProperty.all(
-                                                const Color.fromARGB(
-                                                    255, 91, 111, 133))),
-                                    onPressed: (() {
-                                      if (user.getOffline) {
-                                        Provider.of<OfflineExpenses>(context,
-                                                listen: false)
-                                            .deleteExpenseOffline(
-                                                categoryId, items[i].id)
-                                            .then((El) {
-                                          Navigator.of(context).pop();
-                                          if (El) {
-                                            const snackBar = SnackBar(
-                                                content:
-                                                    Text("Expense Deleted"));
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                            setState(() {
-                                              _titleController.clear();
-                                              _amountController.clear();
+            SingleChildScrollView(
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: items.length,
+                    itemBuilder: ((ctx, i) {
+                      // print(items[i].time.day);
+                      return GestureDetector(
+                        onDoubleTap: () {
+                          showDialog(
+                              context: context,
+                              builder: (ctx) {
+                                return AlertDialog(
+                                  actions: [
+                                    TextButton(
+                                        style: ButtonStyle(
+                                            backgroundColor:
+                                                MaterialStateProperty.all(
+                                                    const Color.fromARGB(
+                                                        255, 91, 111, 133))),
+                                        onPressed: (() {
+                                          if (user.getOffline) {
+                                            Provider.of<OfflineExpenses>(context,
+                                                    listen: false)
+                                                .deleteExpenseOffline(
+                                                    categoryId, items[i].id)
+                                                .then((El) {
+                                              Navigator.of(context).pop();
+                                              if (El) {
+                                                const snackBar = SnackBar(
+                                                    content:
+                                                        Text("Expense Deleted"));
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(snackBar);
+                                                setState(() {
+                                                  _titleController.clear();
+                                                  _amountController.clear();
+                                                });
+                                              } else {
+                                                const snackBar = SnackBar(
+                                                    content: Text(
+                                                        "Expense Not Deleted"));
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(snackBar);
+                                              }
                                             });
                                           } else {
-                                            const snackBar = SnackBar(
-                                                content: Text(
-                                                    "Expense Not Deleted"));
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                          }
-                                        });
-                                      } else {
-                                        Provider.of<Expenses>(context,
-                                                listen: false)
-                                            .deleteExpense(
-                                                categoryId, items[i].id)
-                                            .then((El) {
-                                          Navigator.of(context).pop();
-                                          if (El) {
-                                            const snackBar = SnackBar(
-                                                content:
-                                                    Text("Expense Deleted"));
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
-                                            setState(() {
-                                              _titleController.clear();
-                                              _amountController.clear();
+                                            Provider.of<Expenses>(context,
+                                                    listen: false)
+                                                .deleteExpense(
+                                                    categoryId, items[i].id)
+                                                .then((El) {
+                                              Navigator.of(context).pop();
+                                              if (El) {
+                                                const snackBar = SnackBar(
+                                                    content:
+                                                        Text("Expense Deleted"));
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(snackBar);
+                                                setState(() {
+                                                  _titleController.clear();
+                                                  _amountController.clear();
+                                                });
+                                              } else {
+                                                const snackBar = SnackBar(
+                                                    content: Text(
+                                                        "Expense Not Deleted"));
+                                                ScaffoldMessenger.of(context)
+                                                    .showSnackBar(snackBar);
+                                              }
                                             });
-                                          } else {
-                                            const snackBar = SnackBar(
-                                                content: Text(
-                                                    "Expense Not Deleted"));
-
-                                            ScaffoldMessenger.of(context)
-                                                .showSnackBar(snackBar);
                                           }
-                                        });
-                                      }
-                                    }),
-                                    child: const Text(
-                                      "Yes",
-                                      style: TextStyle(color: Colors.white),
-                                    )),
-                                TextButton(
-                                    onPressed: (() {
-                                      Navigator.of(context).pop();
-                                    }),
-                                    child: const Text(
-                                      "No",
-                                      style: TextStyle(
-                                          color: Color.fromARGB(
-                                              255, 91, 111, 133)),
-                                    )),
-                              ],
-                              title: const Text("Confirmation"),
-                              content: Text(
-                                  "Want to Delete ${items[i].title} of amount ₹${items[i].amount.toString()}"),
-                            );
+                                        }),
+                                        child: const Text(
+                                          "Yes",
+                                          style: TextStyle(color: Colors.white),
+                                        )),
+                                    TextButton(
+                                        onPressed: (() {
+                                          Navigator.of(context).pop();
+                                        }),
+                                        child: const Text(
+                                          "No",
+                                          style: TextStyle(
+                                              color: Color.fromARGB(
+                                                  255, 91, 111, 133)),
+                                        )),
+                                  ],
+                                  title: const Text("Confirmation"),
+                                  content: Text(
+                                      "Want to Delete ${items[i].title} of amount ₹${items[i].amount.toString()}"),
+                                );
+                              });
+                        },
+                        onLongPress: () {
+                          setState(() {
+                            isEditing = true;
+                            _titleController.text = items[i].title;
+                            _amountController.text = items[i].amount.toString();
+                            _idController.text = items[i].id;
                           });
-                    },
-                    onLongPress: () {
-                      setState(() {
-                        isEditing = true;
-                        _titleController.text = items[i].title;
-                        _amountController.text = items[i].amount.toString();
-                        _idController.text = items[i].id;
-                      });
-                    },
-                    child: Container(
-                      decoration: const BoxDecoration(
-                          border: Border(
-                              bottom:
-                                  BorderSide(color: Colors.black, width: 1))),
-                      child: ListTile(
-                        title: Text(items[i].title),
-                        subtitle: Row(
-                          children: [
-                            Text(
-                                "${items[i].time.hour.toString()}:${items[i].time.minute.toString()},"),
-                            const SizedBox(
-                              width: 2,
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                              border: Border(
+                                  bottom:
+                                      BorderSide(color: Colors.black, width: 1))),
+                          child: ListTile(
+                            title: Text(items[i].title),
+                            subtitle: Row(
+                              children: [
+                                Text(
+                                    "${items[i].time.hour.toString()}:${items[i].time.minute.toString()},"),
+                                const SizedBox(
+                                  width: 2,
+                                ),
+                                Text(items[i].time.day.toString()),
+                                const SizedBox(
+                                  width: 2,
+                                ),
+                                Text(monthToString(items[i].time.month)),
+                                Text(", ${items[i].time.year.toString()}"),
+                              ],
                             ),
-                            Text(items[i].time.day.toString()),
-                            const SizedBox(
-                              width: 2,
-                            ),
-                            Text(monthToString(items[i].time.month)),
-                            Text(", ${items[i].time.year.toString()}"),
-                          ],
+                            trailing: Text("₹ ${items[i].amount.toString()}"),
+                          ),
                         ),
-                        trailing: Text("₹ ${items[i].amount.toString()}"),
-                      ),
-                    ),
-                  );
-                })),
+                      );
+                    })),
+              ),
+            ),
           ],
         ),
       ),
