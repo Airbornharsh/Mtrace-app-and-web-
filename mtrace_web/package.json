@@ -9,11 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@types/node": "18.11.14",
     "autoprefixer": "^10.4.13",
     "axios": "^1.2.1",
     "bcrypt": "^5.1.0",
     "chart.js": "^4.0.1",
     "dotenv": "^16.0.3",
+    "js-base64": "^3.7.3",
     "jsonwebtoken": "^8.5.1",
     "jwt": "^0.2.0",
     "mongoose": "^6.8.0",
@@ -24,8 +26,7 @@
     "react-dom": "18.2.0",
     "react-icons": "^4.7.1",
     "react-minimal-pie-chart": "^8.4.0",
-    "tailwindcss": "^3.2.4",
-    "@types/node": "18.11.14"
+    "tailwindcss": "^3.2.4"
   },
   "devDependencies": {
     "@types/react": "^18.0.26",
