@@ -44,6 +44,7 @@ class User with ChangeNotifier {
   }
 
   void setOffline(bool data) {
+    print(data); 
     _isOffline = data;
   }
 

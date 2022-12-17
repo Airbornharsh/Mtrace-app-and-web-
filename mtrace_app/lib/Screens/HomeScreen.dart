@@ -61,12 +61,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // if (widget.start1 == 1) {
     //   SharedPreferences.getInstance().then((prefs) {
-    //     // prefs.setString("mtrace_backend_uri", "http://localhost:3000");
-    //     // if (prefs.getKeys().contains("mtrace_offline")) {
-    //     //   setState(() {
-    //     //     user.setOffline(prefs.getBool("mtrace_offline") as bool);
-    //     //   });
-    //     // }
+    //     prefs.setString("mtrace_backend_uri", "http://localhost:3000");
+    //     if (prefs.getKeys().contains("mtrace_offline")) {
+    //       setState(() {
+    //         user.setOffline(prefs.getBool("mtrace_offline") as bool);
+    //       });
+    //     }
     //   });
 
     //   widget.start1 = 0;

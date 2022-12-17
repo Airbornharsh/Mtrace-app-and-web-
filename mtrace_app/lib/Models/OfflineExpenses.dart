@@ -50,8 +50,12 @@ class OfflineExpenses with ChangeNotifier {
 
   void filterItems(String category, Filter type) {
     filter = type;
-    List<Expense> tempCategoryItems =
-        _categoryItems[category]!["list"] as List<Expense>;
+
+    late List<Expense> tempCategoryItems;
+
+    if (_categoryItems.containsKey(category)) {
+      tempCategoryItems = _categoryItems[category]!["list"] as List<Expense>;
+    }
 
     if (type == Filter.newestFirst) {
       for (var i = 0; i < tempCategoryItems.length - 1; i++) {
@@ -193,7 +197,6 @@ class OfflineExpenses with ChangeNotifier {
 
   Future<bool> deleteExpenseOffline(String category, String id) async {
     try {
-      
       _box.delete(id);
 
       var expenseItemsId = _box.get("expenseItems");

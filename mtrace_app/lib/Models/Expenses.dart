@@ -74,8 +74,12 @@ class Expenses with ChangeNotifier {
 
   void filterItems(String category, Filter type) {
     filter = type;
-    List<Expense> tempCategoryItems =
-        _categoryItems[category]!["list"] as List<Expense>;
+
+    late List<Expense> tempCategoryItems;
+
+    if (_categoryItems.containsKey(category)) {
+      tempCategoryItems = _categoryItems[category]!["list"] as List<Expense>;
+    }
 
     if (type == Filter.newestFirst) {
       for (var i = 0; i < tempCategoryItems.length - 1; i++) {

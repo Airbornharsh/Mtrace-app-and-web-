@@ -430,10 +430,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      Provider.of<Expenses>(context,
-                                              listen: false)
-                                          .filterItems(
-                                              categoryId, Filter.newestFirst);
+                                      if (user.getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.newestFirst);
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.newestFirst);
+                                      }
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -444,10 +451,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      Provider.of<Expenses>(context,
-                                              listen: false)
-                                          .filterItems(
-                                              categoryId, Filter.oldestFirst);
+                                      if (user.getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.oldestFirst);
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.oldestFirst);
+                                      }
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -458,10 +472,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      Provider.of<Expenses>(context,
-                                              listen: false)
-                                          .filterItems(
-                                              categoryId, Filter.lowToHigh);
+                                      if (user.getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.lowToHigh);
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.lowToHigh);
+                                      }
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -472,10 +493,17 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                 GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      Provider.of<Expenses>(context,
-                                              listen: false)
-                                          .filterItems(
-                                              categoryId, Filter.highToLow);
+                                      if (user.getOffline) {
+                                        Provider.of<OfflineExpenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.highToLow);
+                                      } else {
+                                        Provider.of<Expenses>(context,
+                                                listen: false)
+                                            .filterItems(
+                                                categoryId, Filter.highToLow);
+                                      }
                                     });
                                     Navigator.of(context).pop();
                                   },
@@ -526,7 +554,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                                         255, 91, 111, 133))),
                                         onPressed: (() {
                                           if (user.getOffline) {
-                                            Provider.of<OfflineExpenses>(context,
+                                            Provider.of<OfflineExpenses>(
+                                                    context,
                                                     listen: false)
                                                 .deleteExpenseOffline(
                                                     categoryId, items[i].id)
@@ -534,8 +563,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                               Navigator.of(context).pop();
                                               if (El) {
                                                 const snackBar = SnackBar(
-                                                    content:
-                                                        Text("Expense Deleted"));
+                                                    content: Text(
+                                                        "Expense Deleted"));
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(snackBar);
                                                 setState(() {
@@ -559,8 +588,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                                               Navigator.of(context).pop();
                                               if (El) {
                                                 const snackBar = SnackBar(
-                                                    content:
-                                                        Text("Expense Deleted"));
+                                                    content: Text(
+                                                        "Expense Deleted"));
                                                 ScaffoldMessenger.of(context)
                                                     .showSnackBar(snackBar);
                                                 setState(() {
@@ -609,8 +638,8 @@ class _CategoryScreenState extends State<CategoryScreen> {
                         child: Container(
                           decoration: const BoxDecoration(
                               border: Border(
-                                  bottom:
-                                      BorderSide(color: Colors.black, width: 1))),
+                                  bottom: BorderSide(
+                                      color: Colors.black, width: 1))),
                           child: ListTile(
                             title: Text(items[i].title),
                             subtitle: Row(
